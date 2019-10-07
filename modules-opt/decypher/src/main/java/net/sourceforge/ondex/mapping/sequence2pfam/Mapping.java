@@ -302,89 +302,96 @@ public class Mapping extends ONDEXMapping
                     + results.size() + " theoretical matches", Mapping.class
                     .toString()));
             // create relations between protein and family
-            for (HMMMatch result : results) {
-                LuceneEnv lenv = LuceneRegistry.sid2luceneEnv.get(graph.getSID());
-                Set<ONDEXConcept> itResults = method
-                        .searchMatchingConceptsInLuceneEnvironment(lenv, result); // lenv.searchConceptByConceptAccessionExact(s,result.getTargetAccession());
-                if (itResults == null || itResults.size() == 0) {
-                    ONDEXEventHandler.getEventHandlerForSID(graph.getSID()).fireEventOccurred(new GeneralOutputEvent(
-                            "Pfam family " + result + " was not found:  creating new one",
-                            Mapping.class.toString()));
-
-                    ONDEXConcept concept = graph.getFactory().createConcept(
-                            result.getHmmAccession(),
-                            dataSource, ccProteinFamily, etIMPD);
-                    BitSet sbs = new BitSet();
-                    sbs.set(concept.getId());
-                    itResults = BitSetFunctions.create(graph, ONDEXConcept.class, sbs);
-                }
-
-                for (ONDEXConcept pfamConcept : itResults) {
-                    if (pfamConcept instanceof LuceneConcept) {
-                        pfamConcept = ((LuceneConcept) pfamConcept).getParent();
-                    }
-
-                    ONDEXConcept from = graph.getConcept(
-                            result.getTargetId());
-
-                    ONDEXRelation relation = graph.getRelation(from,
-                            pfamConcept, rtMemberIsPartOf);
-                    if (relation == null) {
-                        relation = graph.getFactory().createRelation(from, pfamConcept,
-                                rtMemberIsPartOf, method.getEvidenceType());
-
-                        relation.createAttribute(atrEvalue,
-                                result.getEValue(), false);
-
-                        if (result.getScore() != -1)
-                            relation.createAttribute(atrBitscore,
-                                    result.getScore(), false);
-                        if (result.getBestDomainEvalue() != null)
-                            relation.createAttribute(atrDomainEvalue, result.getBestDomainEvalue(), false);
-
-                        if (result.getBestDomainScore() != null)
-                            relation.createAttribute(atrDomainBitscore, result.getBestDomainScore(), false);
-
-                        if (result.getQueryFrame() != null)
-                            relation.createAttribute(atrTranslationFrame, result.getQueryFrame(), false);
-
-                    } else {
-                        Attribute evalue = relation.getAttribute(atrEvalue);
-                        Attribute bitscore = relation.getAttribute(atrBitscore);
-                        Attribute domain_evalue = relation.getAttribute(atrDomainEvalue);
-                        Attribute domain_bitscore = relation.getAttribute(atrDomainBitscore);
-                        Attribute frame = relation.getAttribute(atrTranslationFrame);
-
-
-                        if (evalue == null || result.getEValue() < ((Number) (evalue.getValue())).doubleValue()) {
-                            evalue.setValue(result.getEValue());
-                            if (bitscore == null) {
-                                if (result.getScore() > -1) {
-                                    relation.createAttribute(atrBitscore,
-                                            result.getScore(), false);
-                                }
-                            } else {
-                                if (result.getScore() > -1) {
-                                    relation.deleteAttribute(atrBitscore); // remove
-                                    // to
-                                    // avoid
-                                    // confusion
-                                } else {
-                                    bitscore.setValue(result.getScore());
-                                }
-                            }
-                            addAttribute(result.getBestDomainEvalue(),
-                                    domain_evalue, relation, atrDomainEvalue);
-
-                            addAttribute(result.getBestDomainScore(),
-                                    domain_bitscore, relation, atrDomainBitscore);
-
-                            addAttribute(result.getQueryFrame(),
-                                    frame, relation, atrTranslationFrame);
-                        }
-                    }
-
-                }
+            LuceneEnv lenv = null;
+            try
+            {
+	            for (HMMMatch result : results) {
+	                lenv = LuceneRegistry.sid2luceneEnv.get(graph.getSID());
+	                Set<ONDEXConcept> itResults = method
+	                        .searchMatchingConceptsInLuceneEnvironment(lenv, result); // lenv.searchConceptByConceptAccessionExact(s,result.getTargetAccession());
+	                if (itResults == null || itResults.size() == 0) {
+	                    ONDEXEventHandler.getEventHandlerForSID(graph.getSID()).fireEventOccurred(new GeneralOutputEvent(
+	                            "Pfam family " + result + " was not found:  creating new one",
+	                            Mapping.class.toString()));
+	
+	                    ONDEXConcept concept = graph.getFactory().createConcept(
+	                            result.getHmmAccession(),
+	                            dataSource, ccProteinFamily, etIMPD);
+	                    BitSet sbs = new BitSet();
+	                    sbs.set(concept.getId());
+	                    itResults = BitSetFunctions.create(graph, ONDEXConcept.class, sbs);
+	                }
+	
+	                for (ONDEXConcept pfamConcept : itResults) {
+	                    if (pfamConcept instanceof LuceneConcept) {
+	                        pfamConcept = ((LuceneConcept) pfamConcept).getParent();
+	                    }
+	
+	                    ONDEXConcept from = graph.getConcept(
+	                            result.getTargetId());
+	
+	                    ONDEXRelation relation = graph.getRelation(from,
+	                            pfamConcept, rtMemberIsPartOf);
+	                    if (relation == null) {
+	                        relation = graph.getFactory().createRelation(from, pfamConcept,
+	                                rtMemberIsPartOf, method.getEvidenceType());
+	
+	                        relation.createAttribute(atrEvalue,
+	                                result.getEValue(), false);
+	
+	                        if (result.getScore() != -1)
+	                            relation.createAttribute(atrBitscore,
+	                                    result.getScore(), false);
+	                        if (result.getBestDomainEvalue() != null)
+	                            relation.createAttribute(atrDomainEvalue, result.getBestDomainEvalue(), false);
+	
+	                        if (result.getBestDomainScore() != null)
+	                            relation.createAttribute(atrDomainBitscore, result.getBestDomainScore(), false);
+	
+	                        if (result.getQueryFrame() != null)
+	                            relation.createAttribute(atrTranslationFrame, result.getQueryFrame(), false);
+	
+	                    } else {
+	                        Attribute evalue = relation.getAttribute(atrEvalue);
+	                        Attribute bitscore = relation.getAttribute(atrBitscore);
+	                        Attribute domain_evalue = relation.getAttribute(atrDomainEvalue);
+	                        Attribute domain_bitscore = relation.getAttribute(atrDomainBitscore);
+	                        Attribute frame = relation.getAttribute(atrTranslationFrame);
+	
+	
+	                        if (evalue == null || result.getEValue() < ((Number) (evalue.getValue())).doubleValue()) {
+	                            evalue.setValue(result.getEValue());
+	                            if (bitscore == null) {
+	                                if (result.getScore() > -1) {
+	                                    relation.createAttribute(atrBitscore,
+	                                            result.getScore(), false);
+	                                }
+	                            } else {
+	                                if (result.getScore() > -1) {
+	                                    relation.deleteAttribute(atrBitscore); // remove
+	                                    // to
+	                                    // avoid
+	                                    // confusion
+	                                } else {
+	                                    bitscore.setValue(result.getScore());
+	                                }
+	                            }
+	                            addAttribute(result.getBestDomainEvalue(),
+	                                    domain_evalue, relation, atrDomainEvalue);
+	
+	                            addAttribute(result.getBestDomainScore(),
+	                                    domain_bitscore, relation, atrDomainBitscore);
+	
+	                            addAttribute(result.getQueryFrame(),
+	                                    frame, relation, atrTranslationFrame);
+	                        }
+	                    }
+	
+	                }
+	            } // for HMMMatch results
+            }
+            finally {
+            	if ( lenv != null ) lenv.closeAll ();
             }
 
         } catch (Exception e) {
